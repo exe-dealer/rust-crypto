@@ -12,6 +12,7 @@ use std::iter::range_step;
 use std::num::Int;
 use std::iter::repeat;
 
+
 use cryptoutil::{write_u32_le, read_u32v_le, FixedBuffer, FixedBuffer64, StandardPadding};
 
 
@@ -254,6 +255,11 @@ impl Md5 {
 mod tests {
     use md5::Md5;
 
+    use std::iter::repeat;
+    use std::num::Int;
+    use std::rand::IsaacRng;
+    use std::rand::distributions::{IndependentSample, Range};
+
 
     struct Test {
         input: &'static str,
@@ -327,12 +333,6 @@ mod tests {
     /// Feed 1,000,000 'a's into the digest with varying input sizes and check that the result is
     /// correct.
     pub fn test_digest_1million_random(digest: &mut Md5, blocksize: usize, expected: &str) {
-        use std::iter::repeat;
-        use std::num::Int;
-
-        use std::rand::IsaacRng;
-        use std::rand::distributions::{IndependentSample, Range};
-
 
         let total_size = 1000000;
         let buffer: Vec<u8> = repeat('a' as u8).take(blocksize * 2).collect();
