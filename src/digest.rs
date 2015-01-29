@@ -72,10 +72,18 @@ pub trait Digest {
      * String in hexadecimal format.
      */
     fn result_str(&mut self) -> String {
-        use serialize::hex::ToHex;
-
         let mut buf: Vec<u8> = repeat(0).take((self.output_bits()+7)/8).collect();
         self.result(buf.as_mut_slice());
-        buf[].to_hex()
+
+        let mut v =  Vec::with_capacity(buf.len() * 2);
+        let hex_chars = b"0123456789abcdef";
+        for &byte in buf.iter() {
+            v.push(hex_chars[(byte >> 4) as usize]);
+            v.push(hex_chars[(byte & 0xf) as usize]);
+        }
+        unsafe {
+            String::from_utf8_unchecked(v)
+        }
     }
 }
+
