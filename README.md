@@ -17,8 +17,11 @@ and the following to your crate root:
 
 ```rust
 extern crate md5;
+```
 
-let hasher = Md5::new();
-hasher.input_str("somestr");
-println!("{}", hasher.result_str());
+```rust
+let mut hasher = Md5::new();
+hasher.input_str("The quick brown fox jumps over the lazy dog");
+let output = &hasher.result_str()[];
+assert_eq!(output, "9e107d9d372bb6826bd81d3542a419d6");
 ```

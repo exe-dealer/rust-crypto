@@ -9,7 +9,6 @@
 
 mod cryptoutil;
 mod buffer;
-mod digest;
 mod md5;
 
 pub use md5::Md5;

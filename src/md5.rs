@@ -10,9 +10,10 @@
 
 use std::iter::range_step;
 use std::num::Int;
+use std::iter::repeat;
 
 use cryptoutil::{write_u32_le, read_u32v_le, FixedBuffer, FixedBuffer64, StandardPadding};
-use digest::Digest;
+
 
 
 // A structure that represents that state of a digest computation for the MD5 digest function
@@ -172,8 +173,8 @@ impl Md5 {
     }
 }
 
-impl Digest for Md5 {
-    fn input(&mut self, input: &[u8]) {
+impl Md5 {
+    pub fn input(&mut self, input: &[u8]) {
         assert!(!self.finished);
         // Unlike Sha1 and Sha2, the length value in MD5 is defined as the length of the message mod
         // 2^64 - ie: integer overflow is OK.
@@ -183,14 +184,14 @@ impl Digest for Md5 {
         );
     }
 
-    fn reset(&mut self) {
+    pub fn reset(&mut self) {
         self.length_bytes = 0;
         self.buffer.reset();
         self.state.reset();
         self.finished = false;
     }
 
-    fn result(&mut self, out: &mut [u8]) {
+    pub fn result(&mut self, out: &mut [u8]) {
         if !self.finished {
             let self_state = &mut self.state;
             self.buffer.standard_padding(8, |d: &[u8]| { self_state.process_block(d); });
@@ -206,16 +207,51 @@ impl Digest for Md5 {
         write_u32_le(&mut out[12..16], self.state.s3);
     }
 
-    fn output_bits(&self) -> usize { 128 }
+    pub fn output_bits(&self) -> usize { 128 }
 
-    fn block_size(&self) -> usize { 64 }
+    pub fn block_size(&self) -> usize { 64 }
+
+    /**
+     * Get the output size in bytes.
+     */
+    pub fn output_bytes(&self) -> usize {
+        (self.output_bits() + 7) / 8
+    }
+
+    /**
+     * Convenience function that feeds a string into a digest.
+     *
+     * # Arguments
+     *
+     * * `input` The string to feed into the digest
+     */
+    pub fn input_str(&mut self, input: &str) {
+        self.input(input.as_bytes());
+    }
+
+    /**
+     * Convenience function that retrieves the result of a digest as a
+     * String in hexadecimal format.
+     */
+    pub fn result_str(&mut self) -> String {
+        let mut buf: Vec<u8> = repeat(0).take((self.output_bits()+7)/8).collect();
+        self.result(buf.as_mut_slice());
+
+        let mut v =  Vec::with_capacity(buf.len() * 2);
+        let hex_chars = b"0123456789abcdef";
+        for &byte in buf.iter() {
+            v.push(hex_chars[(byte >> 4) as usize]);
+            v.push(hex_chars[(byte & 0xf) as usize]);
+        }
+        unsafe {
+            String::from_utf8_unchecked(v)
+        }
+    }
 }
 
 
 #[cfg(test)]
 mod tests {
-    use cryptoutil::test::test_digest_1million_random;
-    use digest::Digest;
     use md5::Md5;
 
 
@@ -224,7 +260,7 @@ mod tests {
         output_str: &'static str,
     }
 
-    fn test_hash<D: Digest>(sh: &mut D, tests: &[Test]) {
+    fn test_hash(sh: &mut Md5, tests: &[Test]) {
         // Test that it works when accepting the message all at once
         for t in tests.iter() {
             sh.input_str(t.input);
@@ -285,6 +321,39 @@ mod tests {
             64,
             "7707d6ae4e027c70eea2a935c2296f21");
     }
+
+
+
+    /// Feed 1,000,000 'a's into the digest with varying input sizes and check that the result is
+    /// correct.
+    pub fn test_digest_1million_random(digest: &mut Md5, blocksize: usize, expected: &str) {
+        use std::iter::repeat;
+        use std::num::Int;
+
+        use std::rand::IsaacRng;
+        use std::rand::distributions::{IndependentSample, Range};
+
+
+        let total_size = 1000000;
+        let buffer: Vec<u8> = repeat('a' as u8).take(blocksize * 2).collect();
+        let mut rng = IsaacRng::new_unseeded();
+        let range = Range::new(0, 2 * blocksize + 1);
+        let mut count = 0;
+
+        digest.reset();
+
+        while count < total_size {
+            let next = range.ind_sample(&mut rng);
+            let remaining = total_size - count;
+            let size = if next > remaining { remaining } else { next };
+            digest.input(&buffer[..size]);
+            count += size;
+        }
+
+        let result_str = digest.result_str();
+
+        assert!(expected == &result_str[]);
+    }
 }
 
 
@@ -292,7 +361,6 @@ mod tests {
 mod bench {
     use test::Bencher;
 
-    use digest::Digest;
     use md5::Md5;
 
 
