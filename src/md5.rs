@@ -8,7 +8,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::iter::range_step;
 use std::num::Int;
 use std::iter::repeat;
 
@@ -60,19 +59,19 @@ impl Md5State {
         }
 
         fn op_f(w: u32, x: u32, y: u32, z: u32, m: u32, s: u32) -> u32 {
-            (w + f(x, y, z) + m).rotate_left(s as usize) + x
+            (w + f(x, y, z) + m).rotate_left(s) + x
         }
 
         fn op_g(w: u32, x: u32, y: u32, z: u32, m: u32, s: u32) -> u32 {
-            (w + g(x, y, z) + m).rotate_left(s as usize) + x
+            (w + g(x, y, z) + m).rotate_left(s) + x
         }
 
         fn op_h(w: u32, x: u32, y: u32, z: u32, m: u32, s: u32) -> u32 {
-            (w + h(x, y, z) + m).rotate_left(s as usize) + x
+            (w + h(x, y, z) + m).rotate_left(s) + x
         }
 
         fn op_i(w: u32, x: u32, y: u32, z: u32, m: u32, s: u32) -> u32 {
-            (w + i(x, y, z) + m).rotate_left(s as usize) + x
+            (w + i(x, y, z) + m).rotate_left(s) + x
         }
 
         let mut a = self.s0;
@@ -85,7 +84,7 @@ impl Md5State {
         read_u32v_le(&mut data, input);
 
         // round 1
-        for i in range_step(0, 16, 4) {
+        for i in (0..16).step_by(4) {
             a = op_f(a, b, c, d, data[i] + C1[i], 7);
             d = op_f(d, a, b, c, data[i + 1] + C1[i + 1], 12);
             c = op_f(c, d, a, b, data[i + 2] + C1[i + 2], 17);
@@ -94,7 +93,7 @@ impl Md5State {
 
         // round 2
         let mut t = 1;
-        for i in range_step(0, 16, 4) {
+        for i in (0..16).step_by(4) {
             a = op_g(a, b, c, d, data[t & 0x0f] + C2[i], 5);
             d = op_g(d, a, b, c, data[(t + 5) & 0x0f] + C2[i + 1], 9);
             c = op_g(c, d, a, b, data[(t + 10) & 0x0f] + C2[i + 2], 14);
@@ -104,7 +103,7 @@ impl Md5State {
 
         // round 3
         t = 5;
-        for i in range_step(0, 16, 4) {
+        for i in (0..16).step_by(4) {
             a = op_h(a, b, c, d, data[t & 0x0f] + C3[i], 4);
             d = op_h(d, a, b, c, data[(t + 3) & 0x0f] + C3[i + 1], 11);
             c = op_h(c, d, a, b, data[(t + 6) & 0x0f] + C3[i + 2], 16);
@@ -114,7 +113,7 @@ impl Md5State {
 
         // round 4
         t = 0;
-        for i in range_step(0, 16, 4) {
+        for i in (0..16).step_by(4) {
             a = op_i(a, b, c, d, data[t & 0x0f] + C4[i], 6);
             d = op_i(d, a, b, c, data[(t + 7) & 0x0f] + C4[i + 1], 10);
             c = op_i(c, d, a, b, data[(t + 14) & 0x0f] + C4[i + 2], 15);
@@ -316,7 +315,7 @@ mod tests {
 
         let mut sh = Md5::new();
 
-        test_hash(&mut sh, &tests[]);
+        test_hash(&mut sh, &tests);
     }
 
     #[test]

@@ -21,7 +21,7 @@ pub fn write_u32_le(dst: &mut[u8], mut input: u32) {
     input = input.to_le();
     unsafe {
         let tmp = &input as *const _ as *const u8;
-        ptr::copy_nonoverlapping_memory(dst.get_unchecked_mut(0), tmp, 4);
+        ptr::copy_nonoverlapping(dst.get_unchecked_mut(0), tmp, 4);
     }
 }
 
@@ -33,9 +33,9 @@ pub fn read_u32v_le(dst: &mut[u32], input: &[u8]) {
     unsafe {
         let mut x = dst.get_unchecked_mut(0) as *mut u32;
         let mut y = input.get_unchecked(0) as *const u8;
-        for _ in (0..dst.len()) {
+        for _ in 0..dst.len() {
             let mut tmp: u32 = mem::uninitialized();
-            ptr::copy_nonoverlapping_memory(&mut tmp as *mut _ as *mut u8, y, 4);
+            ptr::copy_nonoverlapping(&mut tmp as *mut _ as *mut u8, y, 4);
             *x = Int::from_le(tmp);
             x = x.offset(1);
             y = y.offset(4);
