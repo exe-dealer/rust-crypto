@@ -9,9 +9,8 @@
 // except according to those terms.
 
 use std::mem;
-use std::num::{Int};
 use std::ptr;
-use std::slice::bytes::{MutableByteVector, copy_memory};
+use std::slice::bytes::{copy_memory};
 
 
 /// Write a u32 into a vector, which must be 4 bytes long. The value is written in little-endian
@@ -21,7 +20,7 @@ pub fn write_u32_le(dst: &mut[u8], mut input: u32) {
     input = input.to_le();
     unsafe {
         let tmp = &input as *const _ as *const u8;
-        ptr::copy_nonoverlapping(dst.get_unchecked_mut(0), tmp, 4);
+        ptr::copy_nonoverlapping(tmp, dst.get_unchecked_mut(0), 4);
     }
 }
 
@@ -31,12 +30,12 @@ pub fn write_u32_le(dst: &mut[u8], mut input: u32) {
 pub fn read_u32v_le(dst: &mut[u32], input: &[u8]) {
     assert!(dst.len() * 4 == input.len());
     unsafe {
-        let mut x = dst.get_unchecked_mut(0) as *mut u32;
-        let mut y = input.get_unchecked(0) as *const u8;
-        for _ in 0..dst.len() {
+        let mut x: *mut u32 = dst.get_unchecked_mut(0);
+        let mut y: *const u8 = input.get_unchecked(0);
+        for _ in (0..dst.len()) {
             let mut tmp: u32 = mem::uninitialized();
-            ptr::copy_nonoverlapping(&mut tmp as *mut _ as *mut u8, y, 4);
-            *x = Int::from_le(tmp);
+            ptr::copy_nonoverlapping(y, &mut tmp as *mut _ as *mut u8, 4);
+            *x = u32::from_le(tmp);
             x = x.offset(1);
             y = y.offset(4);
         }
@@ -111,15 +110,15 @@ macro_rules! impl_fixed_buffer( ($name:ident, $size:expr) => (
                 let buffer_remaining = size - self.buffer_idx;
                 if input.len() >= buffer_remaining {
                         copy_memory(
-                            &mut self.buffer[self.buffer_idx..size],
-                            &input[..buffer_remaining]);
+                            &input[..buffer_remaining],
+                            &mut self.buffer[self.buffer_idx..size]);
                     self.buffer_idx = 0;
                     func(&self.buffer);
                     i += buffer_remaining;
                 } else {
                     copy_memory(
-                        &mut self.buffer[self.buffer_idx..self.buffer_idx + input.len()],
-                        input);
+                        input,
+                        &mut self.buffer[self.buffer_idx..self.buffer_idx + input.len()]);
                     self.buffer_idx += input.len();
                     return;
                 }
@@ -137,8 +136,8 @@ macro_rules! impl_fixed_buffer( ($name:ident, $size:expr) => (
             // be empty.
             let input_remaining = input.len() - i;
             copy_memory(
-                &mut self.buffer[0..input_remaining],
-                &input[i..]);
+                &input[i..],
+                &mut self.buffer[0..input_remaining]);
             self.buffer_idx += input_remaining;
         }
 
@@ -148,7 +147,7 @@ macro_rules! impl_fixed_buffer( ($name:ident, $size:expr) => (
 
         fn zero_until(&mut self, idx: usize) {
             assert!(idx >= self.buffer_idx);
-            &mut self.buffer[self.buffer_idx..idx].set_memory(0);
+            zero(&mut self.buffer[self.buffer_idx..idx]);
             self.buffer_idx = idx;
         }
 
@@ -177,11 +176,23 @@ macro_rules! impl_fixed_buffer( ($name:ident, $size:expr) => (
     }
 ));
 
+/// Zero all bytes in dst
+#[inline]
+pub fn zero(dst: &mut [u8]) {
+    unsafe {
+        ptr::write_bytes(dst.as_mut_ptr(), 0, dst.len());
+    }
+}
+
 /// A fixed size buffer of 64 bytes useful for cryptographic operations.
 #[derive(Copy)]
 pub struct FixedBuffer64 {
     buffer: [u8; 64],
     buffer_idx: usize,
+}
+
+impl Clone for FixedBuffer64 {
+    fn clone(&self) -> FixedBuffer64 { *self }
 }
 
 impl FixedBuffer64 {

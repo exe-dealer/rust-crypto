@@ -8,7 +8,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::num::Int;
 use std::iter::repeat;
 
 
@@ -59,19 +58,19 @@ impl Md5State {
         }
 
         fn op_f(w: u32, x: u32, y: u32, z: u32, m: u32, s: u32) -> u32 {
-            (w + f(x, y, z) + m).rotate_left(s) + x
+            w.wrapping_add(f(x, y, z)).wrapping_add(m).rotate_left(s).wrapping_add(x)
         }
 
         fn op_g(w: u32, x: u32, y: u32, z: u32, m: u32, s: u32) -> u32 {
-            (w + g(x, y, z) + m).rotate_left(s) + x
+            w.wrapping_add(g(x, y, z)).wrapping_add(m).rotate_left(s).wrapping_add(x)
         }
 
         fn op_h(w: u32, x: u32, y: u32, z: u32, m: u32, s: u32) -> u32 {
-            (w + h(x, y, z) + m).rotate_left(s) + x
+            w.wrapping_add(h(x, y, z)).wrapping_add(m).rotate_left(s).wrapping_add(x)
         }
 
         fn op_i(w: u32, x: u32, y: u32, z: u32, m: u32, s: u32) -> u32 {
-            (w + i(x, y, z) + m).rotate_left(s) + x
+            w.wrapping_add(i(x, y, z)).wrapping_add(m).rotate_left(s).wrapping_add(x)
         }
 
         let mut a = self.s0;
@@ -85,46 +84,46 @@ impl Md5State {
 
         // round 1
         for i in (0..16).step_by(4) {
-            a = op_f(a, b, c, d, data[i] + C1[i], 7);
-            d = op_f(d, a, b, c, data[i + 1] + C1[i + 1], 12);
-            c = op_f(c, d, a, b, data[i + 2] + C1[i + 2], 17);
-            b = op_f(b, c, d, a, data[i + 3] + C1[i + 3], 22);
+            a = op_f(a, b, c, d, data[i].wrapping_add(C1[i]), 7);
+            d = op_f(d, a, b, c, data[i + 1].wrapping_add(C1[i + 1]), 12);
+            c = op_f(c, d, a, b, data[i + 2].wrapping_add(C1[i + 2]), 17);
+            b = op_f(b, c, d, a, data[i + 3].wrapping_add(C1[i + 3]), 22);
         }
 
         // round 2
         let mut t = 1;
         for i in (0..16).step_by(4) {
-            a = op_g(a, b, c, d, data[t & 0x0f] + C2[i], 5);
-            d = op_g(d, a, b, c, data[(t + 5) & 0x0f] + C2[i + 1], 9);
-            c = op_g(c, d, a, b, data[(t + 10) & 0x0f] + C2[i + 2], 14);
-            b = op_g(b, c, d, a, data[(t + 15) & 0x0f] + C2[i + 3], 20);
+            a = op_g(a, b, c, d, data[t & 0x0f].wrapping_add(C2[i]), 5);
+            d = op_g(d, a, b, c, data[(t + 5) & 0x0f].wrapping_add(C2[i + 1]), 9);
+            c = op_g(c, d, a, b, data[(t + 10) & 0x0f].wrapping_add(C2[i + 2]), 14);
+            b = op_g(b, c, d, a, data[(t + 15) & 0x0f].wrapping_add(C2[i + 3]), 20);
             t += 20;
         }
 
         // round 3
         t = 5;
         for i in (0..16).step_by(4) {
-            a = op_h(a, b, c, d, data[t & 0x0f] + C3[i], 4);
-            d = op_h(d, a, b, c, data[(t + 3) & 0x0f] + C3[i + 1], 11);
-            c = op_h(c, d, a, b, data[(t + 6) & 0x0f] + C3[i + 2], 16);
-            b = op_h(b, c, d, a, data[(t + 9) & 0x0f] + C3[i + 3], 23);
+            a = op_h(a, b, c, d, data[t & 0x0f].wrapping_add(C3[i]), 4);
+            d = op_h(d, a, b, c, data[(t + 3) & 0x0f].wrapping_add(C3[i + 1]), 11);
+            c = op_h(c, d, a, b, data[(t + 6) & 0x0f].wrapping_add(C3[i + 2]), 16);
+            b = op_h(b, c, d, a, data[(t + 9) & 0x0f].wrapping_add(C3[i + 3]), 23);
             t += 12;
         }
 
         // round 4
         t = 0;
         for i in (0..16).step_by(4) {
-            a = op_i(a, b, c, d, data[t & 0x0f] + C4[i], 6);
-            d = op_i(d, a, b, c, data[(t + 7) & 0x0f] + C4[i + 1], 10);
-            c = op_i(c, d, a, b, data[(t + 14) & 0x0f] + C4[i + 2], 15);
-            b = op_i(b, c, d, a, data[(t + 21) & 0x0f] + C4[i + 3], 21);
+            a = op_i(a, b, c, d, data[t & 0x0f].wrapping_add(C4[i]), 6);
+            d = op_i(d, a, b, c, data[(t + 7) & 0x0f].wrapping_add(C4[i + 1]), 10);
+            c = op_i(c, d, a, b, data[(t + 14) & 0x0f].wrapping_add(C4[i + 2]), 15);
+            b = op_i(b, c, d, a, data[(t + 21) & 0x0f].wrapping_add(C4[i + 3]), 21);
             t += 28;
         }
 
-        self.s0 += a;
-        self.s1 += b;
-        self.s2 += c;
-        self.s3 += d;
+        self.s0 = self.s0.wrapping_add(a);
+        self.s1 = self.s1.wrapping_add(b);
+        self.s2 = self.s2.wrapping_add(c);
+        self.s3 = self.s3.wrapping_add(d);
     }
 }
 
@@ -235,7 +234,7 @@ impl Md5 {
      */
     pub fn result_str(&mut self) -> String {
         let mut buf: Vec<u8> = repeat(0).take((self.output_bits()+7)/8).collect();
-        self.result(buf.as_mut_slice());
+        self.result(&mut buf);
 
         let mut v =  Vec::with_capacity(buf.len() * 2);
         let hex_chars = b"0123456789abcdef";
@@ -252,12 +251,13 @@ impl Md5 {
 
 #[cfg(test)]
 mod tests {
+    extern crate rand;
+
     use md5::Md5;
 
     use std::iter::repeat;
-    use std::num::Int;
-    use std::rand::IsaacRng;
-    use std::rand::distributions::{IndependentSample, Range};
+    use self::rand::IsaacRng;
+    use self::rand::distributions::{IndependentSample, Range};
 
 
     struct Test {
@@ -351,7 +351,7 @@ mod tests {
 
         let result_str = digest.result_str();
 
-        assert!(expected == &result_str[]);
+        assert!(expected == &result_str[..]);
     }
 }
 

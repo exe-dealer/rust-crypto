@@ -4,6 +4,10 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+#![feature(step_by)]
+#![feature(test)]
+#![feature(core)]
+#![feature(rand)]
 
 #[cfg(test)] extern crate test;
 
