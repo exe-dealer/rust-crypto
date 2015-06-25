@@ -5,8 +5,8 @@
 // except according to those terms.
 
 #![feature(step_by)]
+#![feature(slice_bytes)]
 #![feature(test)]
-#![feature(core)]
 #![feature(rand)]
 
 #[cfg(test)] extern crate test;
